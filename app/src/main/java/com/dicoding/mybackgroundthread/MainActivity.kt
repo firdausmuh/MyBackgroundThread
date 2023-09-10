@@ -6,6 +6,11 @@ import android.os.Handler
 import android.os.Looper
 import android.widget.Button
 import android.widget.TextView
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 
@@ -22,27 +27,23 @@ class MainActivity : AppCompatActivity() {
         val handler = Handler(Looper.getMainLooper())
 
         btnStart.setOnClickListener {
-            executor.execute {
-                try {
-                    //simulate process compressing
-                    for (i in 0..10) {
-                        Thread.sleep(500)
-                        val percentage = i * 10
-                        handler.post{
-                            //update UI in main Thread
-                            if (percentage == 100) {
-                                tvStatus.setText(R.string.task_completed)
-                            } else {
-                                tvStatus.text = String.format(getString(R.string.compressing), percentage)
-                            }
+            lifecycleScope.launch(Dispatchers.Default) {
+                //simulate process in background thread
+                for (i in 0..10) {
+                    delay(500)
+                    val percentage = i * 10
+                    withContext(Dispatchers.Main) {
+                        //update ui in main thread
+                        if (percentage == 100) {
+                            tvStatus.setText(R.string.task_completed)
+                        } else {
+                            tvStatus.text =
+                                String.format(getString(R.string.compressing), percentage)
                         }
                     }
-                } catch (e: InterruptedException) {
-                    e.printStackTrace()
+
                 }
-
             }
-
         }
     }
 }
